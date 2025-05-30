@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneRoster v1.1 Enterprise PoC - Dynamic Backend</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .lucide-icon {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .code-highlight {
+            background: linear-gradient(90deg, #1e293b 0%, #374151 100%);
+        }
+        .integration-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        .integration-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Enhanced Lucide React icons
+        const Database = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+            </svg>
+        );
+        const Users = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        );
+        const BookOpen = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+        );
+        const Building = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>
+            </svg>
+        );
+        const Download = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" x2="12" y1="15" y2="3"/>
+            </svg>
+        );
+        const Search = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+        );
+        const Eye = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+        );
+        const Settings = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+        );
+        const Network = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0"/><path d="M12 1v6m0 6v6"/><path d="m21 9-6 6-6-6"/>
+            </svg>
+        );
+        const Shield = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+            </svg>
+        );
+        const Zap = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
+            </svg>
+        );
+        const Globe = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
+            </svg>
+        );
+        const Calendar = ({ className }) => (
+            <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24">
+                <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+            </svg>
+        );
+
+        const integrationExamples = {
+            sis: {
+                name: 'PowerSchool Integration', type: 'Student Information System',
+                description: 'Sync student enrollment, grades, and demographic data using OneRoster as the common format.',
+                endpoints: ['GET /ims/oneroster/v1p1/users?filter=role="student"', 'GET /ims/oneroster/v1p1/enrollments', 'GET /ims/oneroster/v1p1/demographics', 'PUT /ims/oneroster/v1p1/users/{id} (conceptual for updates from other systems to SIS if supported)'],
+                code: `// Conceptual: PowerSchool consuming OneRoster data
+async function syncStudentsToPowerSchool() {
+  console.log("Fetching students via OneRoster API...");
+  // const oneRosterStudents = await makeOneRosterApiCall('/users?filter=role="student"');
+  // const oneRosterEnrollments = await makeOneRosterApiCall('/enrollments');
+  // oneRosterStudents.forEach(student => {
+  //   const studentEnrollments = oneRosterEnrollments.filter(e => e.userSourcedId === student.sourcedId);
+  //   console.log(\`Processing OneRoster student \${student.sourcedId} for PowerSchool.\`);
+  //   // powerSchoolAdapter.upsertStudent(student, studentEnrollments);
+  // });
+  console.log("Student sync process with PowerSchool (conceptual) complete.");
+}`
+            },
+            lms: {
+                name: 'Canvas LMS Integration', type: 'Learning Management System',
+                description: 'Automatically create courses and enroll students in Canvas using OneRoster data.',
+                endpoints: ['GET /ims/oneroster/v1p1/courses', 'GET /ims/oneroster/v1p1/classes', 'GET /ims/oneroster/v1p1/users?filter=role="teacher"', 'GET /ims/oneroster/v1p1/enrollments'],
+                code: `// Conceptual: Canvas LMS consuming OneRoster data
+async function provisionCoursesInCanvas() {
+  console.log("Fetching courses and classes via OneRoster API...");
+  // const oneRosterCourses = await makeOneRosterApiCall('/courses');
+  // const oneRosterClasses = await makeOneRosterApiCall('/classes');
+  // oneRosterClasses.forEach(cls => {
+  //   const courseInfo = oneRosterCourses.find(c => c.sourcedId === cls.courseSourcedId);
+  //   console.log(\`Provisioning class \${cls.title} (\${courseInfo.title}) in Canvas.\`);
+  // });
+  console.log("Canvas course provisioning (conceptual) complete.");
+}`
+            },
+            assessment: {
+                name: 'Illuminate Assessment', type: 'Assessment Platform',
+                description: 'Synchronize class rosters into an assessment platform for standardized testing or formative assessments.',
+                endpoints: ['GET /ims/oneroster/v1p1/orgs?filter=type="school"', 'GET /ims/oneroster/v1p1/classes?filter=schoolSourcedId="{schoolId}"', 'GET /ims/oneroster/v1p1/classes/{classId}/students'],
+                code: `// Conceptual: Assessment platform consuming OneRoster data
+async function syncRostersToAssessmentPlatform() {
+  console.log("Fetching schools and their classes via OneRoster API...");
+  // const oneRosterSchools = await makeOneRosterApiCall('/orgs?filter=type="school"');
+  // for (const school of oneRosterSchools) {
+  //   console.log(\`Processing school: \${school.name}\`);
+  //   const oneRosterClasses = await makeOneRosterApiCall(\`/classes?filter=schoolSourcedId="\${school.sourcedId}"\`);
+  //   for (const cls of oneRosterClasses) {
+  //     console.log(\`Fetching students for class: \${cls.title}\`);
+  //     // const studentsInClass = await makeOneRosterApiCall(\`/classes/\${cls.sourcedId}/students\`);
+  //     // assessmentPlatformAdapter.updateRoster(cls, studentsInClass);
+  //   }
+  // }
+  console.log("Assessment platform roster sync (conceptual) complete.");
+}`
+            }
+        };
+
+        const webhookEvents = [
+            { id: 'wh-001', timestamp: new Date().toISOString(), event: 'user.created', data: { sourcedId: 'user-student-003', role: 'student', name: 'Emma Davis' } },
+            { id: 'wh-002', timestamp: new Date(Date.now() - 300000).toISOString(), event: 'enrollment.updated', data: { sourcedId: 'enrollment-004', status: 'active', classSourcedId: 'class-math-001' } },
+            { id: 'wh-003', timestamp: new Date(Date.now() - 600000).toISOString(), event: 'class.modified', data: { sourcedId: 'class-english-001', location: 'Room 105' } }
+        ];
+
+        const OneRosterPOC = () => {
+            const [activeTab, setActiveTab] = React.useState('overview');
+            const [selectedEndpoint, setSelectedEndpoint] = React.useState('');
+            const [apiResponse, setApiResponse] = React.useState('');
+            const [selectedIntegration, setSelectedIntegration] = React.useState('sis');
+            const [webhookSimulation, setWebhookSimulation] = React.useState(false);
+            const [liveEvents, setLiveEvents] = React.useState([]);
+            const [searchFilter, setSearchFilter] = React.useState('');
+            const [authToken, setAuthToken] = React.useState('');
+
+            const [fetchedOneRosterData, setFetchedOneRosterData] = React.useState(null);
+            const [isLoading, setIsLoading] = React.useState(true);
+            const [fetchError, setFetchError] = React.useState(null);
+
+            const BACKEND_API_URL = 'http://127.0.0.1:8006/api/v1/oneroster/all'; // ADJUST PORT IF NEEDED
+
+            React.useEffect(() => {
+                const fetchData = async () => {
+                    setIsLoading(true); setFetchError(null);
+                    console.log("Attempting to fetch data from:", BACKEND_API_URL);
+                    try {
+                        const response = await fetch(BACKEND_API_URL);
+                        console.log("Fetch response status:", response.status);
+                        if (!response.ok) {
+                            const errorText = await response.text(); console.error("Fetch error response text:", errorText);
+                            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}. Body: ${errorText}`);
+                        }
+                        const data = await response.json(); console.log("Data fetched successfully:", data);
+                        setFetchedOneRosterData(data);
+                    } catch (error) {
+                        console.error("Failed to fetch OneRoster data:", error); setFetchError(error.message);
+                        setFetchedOneRosterData({ orgs: [], users: [], courses: [], classes: [], enrollments: [], academicSessions: [], demographics: [], resources: [] });
+                    } finally { setIsLoading(false); }
+                };
+                fetchData();
+            }, [BACKEND_API_URL]);
+
+            const tabs = [
+                { id: 'overview', label: 'Overview', icon: Database }, { id: 'data', label: 'Enhanced Data', icon: Eye },
+                { id: 'api', label: 'API Testing', icon: Search }, { id: 'integrations', label: 'Integrations', icon: Network },
+                { id: 'webhooks', label: 'Webhooks', icon: Zap }, { id: 'security', label: 'Security', icon: Shield },
+                { id: 'settings', label: 'Settings', icon: Settings }
+            ];
+
+            const placeholderClassSourcedId = React.useMemo(() => fetchedOneRosterData?.classes?.[0]?.sourcedId || '{classSourcedId}', [fetchedOneRosterData]);
+            const apiEndpoints = React.useMemo(() => [
+                '/ims/oneroster/v1p1/orgs', '/ims/oneroster/v1p1/users', '/ims/oneroster/v1p1/courses',
+                '/ims/oneroster/v1p1/classes', '/ims/oneroster/v1p1/enrollments', '/ims/oneroster/v1p1/academicSessions',
+                '/ims/oneroster/v1p1/demographics', '/ims/oneroster/v1p1/resources',
+                '/ims/oneroster/v1p1/users?filter=role="student"',
+                `/ims/oneroster/v1p1/classes/${placeholderClassSourcedId}/students`
+            ], [placeholderClassSourcedId]);
+
+            const getMockApiResponse = React.useCallback((endpoint) => {
+                if (!fetchedOneRosterData) return { error: "Data not loaded yet." };
+                if (endpoint === '/ims/oneroster/v1p1/orgs') return fetchedOneRosterData.orgs || [];
+                if (endpoint === '/ims/oneroster/v1p1/users') return fetchedOneRosterData.users || [];
+                // ... (rest of getMockApiResponse conditions as in previous correct version)
+                if (endpoint === '/ims/oneroster/v1p1/courses') return fetchedOneRosterData.courses || [];
+                if (endpoint === '/ims/oneroster/v1p1/classes') return fetchedOneRosterData.classes || [];
+                if (endpoint === '/ims/oneroster/v1p1/enrollments') return fetchedOneRosterData.enrollments || [];
+                if (endpoint === '/ims/oneroster/v1p1/academicSessions') return fetchedOneRosterData.academicSessions || [];
+                if (endpoint === '/ims/oneroster/v1p1/demographics') return fetchedOneRosterData.demographics || [];
+                if (endpoint === '/ims/oneroster/v1p1/resources') return fetchedOneRosterData.resources || [];
+                if (endpoint === '/ims/oneroster/v1p1/users?filter=role="student"') return (fetchedOneRosterData.users || []).filter(u => u.role === 'student');
+                if (endpoint.includes('/students') && endpoint.includes('/classes/')) {
+                    const classIdMatch = endpoint.match(/\/classes\/([^\/]+)\/students/);
+                    const classId = classIdMatch ? classIdMatch[1] : placeholderClassSourcedId;
+                    if (classId && classId !== '{classSourcedId}') {
+                        const enrolledStudentUsers = (fetchedOneRosterData.enrollments || [])
+                            .filter(e => e.classSourcedId === classId && e.role === 'student')
+                            .map(e => (fetchedOneRosterData.users || []).find(u => u.sourcedId === e.userSourcedId))
+                            .filter(Boolean);
+                        return { students: enrolledStudentUsers, count: enrolledStudentUsers.length };
+                    } return { error: 'Class SourcedId not provided or invalid.' };
+                } return { error: 'Endpoint not mocked or invalid parameters.' };
+            }, [fetchedOneRosterData, placeholderClassSourcedId]);
+
+            const handleApiCall = React.useCallback((endpoint) => {
+                setSelectedEndpoint(endpoint); setApiResponse('Loading...');
+                setTimeout(() => { const response = getMockApiResponse(endpoint); setApiResponse(JSON.stringify(response, null, 2)); }, 300);
+            }, [getMockApiResponse]);
+
+            const handleAuthTokenChange = (e) => setAuthToken(e.target.value);
+            const toggleWebhookSimulation = () => setWebhookSimulation(prev => { if(!prev) setLiveEvents([]); return !prev; }); // Clear events when starting
+            React.useEffect(() => {
+                let intervalId;
+                if (webhookSimulation) {
+                    intervalId = setInterval(() => {
+                        const randomEvent = webhookEvents[Math.floor(Math.random() * webhookEvents.length)];
+                        setLiveEvents(prev => [{ ...randomEvent, id: `live-${Date.now()}-${Math.random()}` , timestamp: new Date().toISOString()}, ...prev].slice(0, 10));
+                    }, 3000);
+                } return () => clearInterval(intervalId);
+            }, [webhookSimulation]);
+
+            const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleString() : 'N/A';
+            const HighlightedJson = ({ jsonString }) => {
+                if (jsonString === null || jsonString === undefined) return <pre className="text-sm text-gray-500">null</pre>;
+                try {
+                    const parsedJson = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+                    const formattedJson = JSON.stringify(parsedJson, null, 2);
+                    let html = formattedJson
+                        .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
+                        .replace(/"([^"]+)":/g, '<span class="text-pink-400">"$1"</span>:')
+                        .replace(/: "([^"]*)"/g, ': <span class="text-green-400">"$1"</span>')
+                        .replace(/: (\d+(\.\d+)?)/g, ': <span class="text-cyan-400">$1</span>')
+                        .replace(/: (true|false)/g, ': <span class="text-purple-400">$1</span>')
+                        .replace(/: null/g, ': <span class="text-gray-500">null</span>');
+                    return <pre className="text-sm" dangerouslySetInnerHTML={{ __html: html }} />;
+                } catch (error) { return <pre className="text-sm text-red-500">Error parsing JSON: {String(jsonString)}</pre>; }
+            };
+
+            const DataSummaryChart = () => {
+                const chartRef = React.useRef(null);
+                const chartInstance = React.useRef(null);
+                React.useEffect(() => {
+                    if (chartRef.current && fetchedOneRosterData) {
+                        const ctx = chartRef.current.getContext('2d');
+                        const dataCounts = {
+                            Orgs: (fetchedOneRosterData.orgs || []).length, Users: (fetchedOneRosterData.users || []).length,
+                            Courses: (fetchedOneRosterData.courses || []).length, Classes: (fetchedOneRosterData.classes || []).length,
+                            Enrollments: (fetchedOneRosterData.enrollments || []).length, Sessions: (fetchedOneRosterData.academicSessions || []).length,
+                        };
+                        if (chartInstance.current) chartInstance.current.destroy();
+                        chartInstance.current = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: Object.keys(dataCounts),
+                                datasets: [{
+                                    label: 'Number of Records', data: Object.values(dataCounts),
+                                    backgroundColor: ['rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'],
+                                    borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9ca3af' }, grid: { display: false } } }, plugins: { legend: { labels: { color: '#d1d5db' } } } }
+                        });
+                    }
+                    return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+                }, [fetchedOneRosterData]);
+
+                if (isLoading) return <p className="text-center text-slate-400 py-10">Loading chart data...</p>;
+                if (fetchError && !fetchedOneRosterData?.orgs) return <p className="text-center text-red-400 py-10">Error loading chart data.</p>; // Only show error if data is truly missing
+                if (!fetchedOneRosterData || Object.keys(fetchedOneRosterData).every(key => (fetchedOneRosterData[key] || []).length === 0)) {
+                     return <p className="text-center text-slate-400 py-10">No data available for chart.</p>;
+                }
+                return <div className="bg-slate-800 p-4 rounded-lg shadow-xl"><canvas ref={chartRef} style={{ height: '350px' }}></canvas></div>;
+            };
+
+            const filteredDataForDisplay = React.useMemo(() => {
+                if (!fetchedOneRosterData) return {};
+                if (!searchFilter) return fetchedOneRosterData;
+                const lowerCaseFilter = searchFilter.toLowerCase();
+                const filtered = {};
+                for (const key in fetchedOneRosterData) {
+                    if (Array.isArray(fetchedOneRosterData[key])) {
+                        try { filtered[key] = fetchedOneRosterData[key].filter(item => JSON.stringify(item).toLowerCase().includes(lowerCaseFilter)); }
+                        catch (e) { console.error("Filter error:", e); filtered[key] = fetchedOneRosterData[key]; }
+                    } else { filtered[key] = fetchedOneRosterData[key]; } // Should not happen for main entities
+                }
+                return filtered;
+            }, [searchFilter, fetchedOneRosterData]);
+
+            const exportToCsv = (dataToExport, filename) => {
+                if (!dataToExport || (Array.isArray(dataToExport) && dataToExport.length === 0)) { alert('No data to export.'); return; }
+                const dataArray = Array.isArray(dataToExport) ? dataToExport : [dataToExport];
+                if (dataArray.length === 0 || typeof dataArray[0] !== 'object' || dataArray[0] === null) { alert('Data not suitable for CSV.'); return; }
+                const headers = Object.keys(dataArray[0]);
+                const csvRows = dataArray.map(row => headers.map(header => { let cell = row[header]; if (cell === null || cell === undefined) cell = ''; else if (typeof cell === 'object') cell = JSON.stringify(cell); return `"${String(cell).replace(/"/g, '""')}"`; }).join(','));
+                const csvContent = [headers.join(','), ...csvRows].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob); link.download = filename;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href);
+            };
+
+            if (isLoading) {
+                return <div className="min-h-screen bg-slate-900 text-gray-200 flex items-center justify-center"><p className="text-xl text-sky-400 animate-pulse">Loading OneRoster Data from Backend...</p></div>;
+            }
+            if (fetchError && !fetchedOneRosterData?.orgs?.length) { // Show error more prominently if primary data is missing
+                return (
+                    <div className="min-h-screen bg-slate-900 text-gray-200 flex flex-col items-center justify-center p-8">
+                        <h2 className="text-2xl text-red-500 mb-4">Failed to Load Data</h2>
+                        <p className="text-slate-300 mb-2">Could not connect to the backend or an error occurred:</p>
+                        <pre className="bg-slate-800 text-red-400 p-4 rounded-md text-sm whitespace-pre-wrap max-w-xl overflow-auto">{fetchError}</pre>
+                        <p className="mt-4 text-slate-400">Please ensure the FastAPI backend server is running on <code className="bg-slate-700 p-1 rounded mx-1">{BACKEND_API_URL.split('/api')[0]}</code> and check the browser/backend console for more details.</p>
+                    </div>
+                );
+            }
+             if (!fetchedOneRosterData || Object.keys(fetchedOneRosterData).length === 0 || Object.values(fetchedOneRosterData).every(arr => Array.isArray(arr) && arr.length === 0) ) {
+                 // This condition checks if fetchedOneRosterData is null, empty, or all its properties are empty arrays
+                 if (fetchError) { // If there was a fetch error but we still got an empty structure
+                    return (
+                        <div className="min-h-screen bg-slate-900 text-gray-200 flex flex-col items-center justify-center p-8">
+                            <h2 className="text-2xl text-orange-500 mb-4">Data Load Issue</h2>
+                            <p className="text-slate-300 mb-2">An error occurred during data fetch, and the resulting data is empty:</p>
+                            <pre className="bg-slate-800 text-orange-400 p-4 rounded-md text-sm whitespace-pre-wrap max-w-xl overflow-auto">{fetchError}</pre>
+                            <p className="mt-4 text-slate-400">Please check backend logs and data sources.</p>
+                        </div>
+                    );
+                 }
+                return <div className="min-h-screen bg-slate-900 text-gray-200 flex items-center justify-center"><p className="text-xl text-orange-400">No data received from backend, or data is empty.</p></div>;
+            }
+
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-gray-200">
+                    <header className="bg-slate-800 shadow-lg">
+                        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-20">
+                                <div className="flex items-center">
+                                    <Globe className="h-10 w-10 text-sky-400 mr-3 animate-pulse" />
+                                    <div><h1 className="text-2xl font-bold text-sky-400">OneRoster v1.1 Enterprise PoC</h1><p className="text-xs text-slate-400">Advanced Data Management & Integration Platform</p></div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <span className="text-sm text-slate-400 hidden md:block">Auth Token: {authToken ? `${authToken.substring(0,8)}...` : 'Not Set'}</span>
+                                    <Settings className="h-6 w-6 text-slate-400 hover:text-sky-400 cursor-pointer" onClick={() => setActiveTab('settings')}/>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <nav className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+                        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8"><div className="flex space-x-1 sm:space-x-2 justify-center">
+                            {tabs.map(({ id, label, icon: Icon }) => (
+                                <button key={id} onClick={() => setActiveTab(id)}
+                                    className={`flex-shrink-0 flex items-center px-2 py-3 sm:px-4 sm:py-4 text-xs sm:text-sm font-medium border-b-2 transition-all duration-150 ease-in-out focus:outline-none ${activeTab === id ? 'border-sky-500 text-sky-400' : 'border-transparent text-slate-400 hover:text-sky-300 hover:border-sky-400'}`}>
+                                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />{label}
+                                </button>
+                            ))}
+                        </div></div>
+                    </nav>
+                    <main className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8"><div className="fade-in">
+                        {activeTab === 'overview' && (
+                            <div className="space-y-8">
+                                <div className="bg-sky-900/30 border border-sky-700 rounded-xl p-6 shadow-2xl">
+                                    <div className="flex items-center mb-4"><Database className="h-10 w-10 text-sky-400 mr-4"/><div><h3 className="text-2xl font-semibold text-sky-300">Enterprise Data Overview</h3><p className="text-sky-500">Real-time insights from integrated backend data.</p></div></div>
+                                    <p className="text-slate-300 mb-6">This dashboard displays live data fetched and processed by the backend, simulating integration from mock SIS and LMS systems.</p>
+                                    <DataSummaryChart />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {[
+                                        { title: 'Total Organizations', count: (fetchedOneRosterData.orgs || []).length, icon: Building, color: 'text-green-400', pulse: true },
+                                        { title: 'Active Users', count: (fetchedOneRosterData.users || []).filter(u => u.status === 'active').length, icon: Users, color: 'text-blue-400' },
+                                        { title: 'Available Courses', count: (fetchedOneRosterData.courses || []).length, icon: BookOpen, color: 'text-purple-400' },
+                                        { title: 'Scheduled Classes', count: (fetchedOneRosterData.classes || []).length, icon: Calendar, color: 'text-yellow-400' }
+                                    ].map(item => (
+                                        <div key={item.title} className="bg-slate-800 p-6 rounded-lg shadow-xl integration-card">
+                                            <div className="flex items-center justify-between mb-3"><h4 className="font-semibold text-slate-300">{item.title}</h4><item.icon className={`h-8 w-8 ${item.color} ${item.pulse ? 'pulse-animation' : ''}`} /></div>
+                                            <p className={`text-4xl font-bold ${item.color}`}>{item.count}</p><p className="text-sm text-slate-500">entities managed</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'data' && (
+                            <div className="bg-slate-800 p-6 rounded-lg shadow-xl">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xl font-semibold text-sky-300">Enhanced Data Explorer (Backend Data)</h3>
+                                    <div className="relative"><input type="text" placeholder="Filter data..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="bg-slate-700 text-slate-200 placeholder-slate-500 border border-slate-600 rounded-lg py-2 px-4 pl-10 focus:ring-sky-500 focus:border-sky-500"/><Search className="h-5 w-5 text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2"/></div>
+                                </div>
+                                <div className="space-y-6">
+                                    {Object.keys(filteredDataForDisplay).length > 0 ? Object.entries(filteredDataForDisplay).map(([key, dataArray]) => (
+                                        (Array.isArray(dataArray)) && <div key={key} className="bg-slate-850 p-4 rounded-md border border-slate-700">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h4 className="text-lg font-semibold capitalize text-sky-400">{key} ({dataArray.length})</h4>
+                                                {dataArray.length > 0 && <button onClick={() => exportToCsv(dataArray, `${key}_export.csv`)} className="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1 rounded-md flex items-center transition-colors"><Download className="h-4 w-4 mr-1" /> Export CSV</button>}
+                                            </div>
+                                            {dataArray.length > 0 ? (
+                                                <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+                                                    {dataArray.slice(0, 10).map((item, index) => (
+                                                        <details key={item.sourcedId || index} className="bg-slate-900 p-3 rounded">
+                                                            <summary className="cursor-pointer text-slate-300 hover:text-sky-300">{item.name || item.title || item.username || item.sourcedId || `Item ${index + 1}`}</summary>
+                                                            <div className="mt-2 pt-2 border-t border-slate-700 code-highlight p-3 rounded-md"><HighlightedJson jsonString={JSON.stringify(item, null, 2)} /></div>
+                                                        </details>
+                                                    ))}
+                                                    {dataArray.length > 10 && <p className="text-slate-500 text-sm mt-2">... and {dataArray.length - 10} more items.</p>}
+                                                </div>
+                                            ) : <p className="text-slate-500">No data matching filter for "{key}" or "{key}" entity is empty.</p>}
+                                        </div>
+                                    )) : <p className="text-slate-400 text-center">No data entities to display. Check backend connection or data processing.</p>}
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'api' && (
+                            <div className="bg-slate-800 p-6 rounded-lg shadow-xl">
+                                <h3 className="text-xl font-semibold text-sky-300 mb-4">API Endpoint Testing (Conceptual)</h3>
+                                <div className="mb-6"><label htmlFor="authToken" className="block text-sm font-medium text-slate-400 mb-1">Authentication Token (Bearer)</label><input type="text" id="authToken" value={authToken} onChange={handleAuthTokenChange} placeholder="Enter API Key or OAuth Token" className="w-full bg-slate-700 text-slate-200 placeholder-slate-500 border border-slate-600 rounded-lg py-2 px-3 focus:ring-sky-500 focus:border-sky-500"/>{authToken && <p className="text-xs text-green-500 mt-1">Token set.</p>}</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    {apiEndpoints.map(endpoint => (<button key={endpoint} onClick={() => handleApiCall(endpoint)} className="text-left p-3 border border-slate-700 rounded-lg hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500"><div className="font-mono text-sm text-sky-400 break-all">{endpoint}</div></button>))}
+                                </div>
+                                {selectedEndpoint && (<div className="space-y-4 mt-6"><h4 className="font-semibold text-slate-300">Response for: <span className="font-mono text-sky-400">{selectedEndpoint}</span></h4><div className="code-highlight p-4 rounded-lg max-h-[600px] overflow-auto"><HighlightedJson jsonString={apiResponse} /></div></div>)}
+                            </div>
+                        )}
+                        {activeTab === 'integrations' && (
+                            <div className="bg-slate-800 p-6 rounded-lg shadow-xl">
+                                <h3 className="text-xl font-semibold text-sky-300 mb-6">Integration Examples</h3>
+                                <div className="flex mb-6 border-b border-slate-700">
+                                    {Object.keys(integrationExamples).map(key => (
+                                        <button key={key} onClick={() => setSelectedIntegration(key)}
+                                            className={`px-4 py-2 font-medium text-sm transition-colors ${selectedIntegration === key ? 'text-sky-400 border-b-2 border-sky-500' : 'text-slate-400 hover:text-sky-300'}`}>
+                                            {integrationExamples[key].name}
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedIntegration && integrationExamples[selectedIntegration] && (
+                                    <div className="integration-card bg-slate-850 p-6 rounded-lg border border-slate-700">
+                                        <h4 className="text-lg font-semibold text-sky-400 mb-1">{integrationExamples[selectedIntegration].name}</h4>
+                                        <p className="text-sm text-slate-500 mb-3">{integrationExamples[selectedIntegration].type}</p>
+                                        <p className="text-slate-300 mb-4">{integrationExamples[selectedIntegration].description}</p>
+                                        <h5 className="font-semibold text-slate-400 mb-2">Relevant Endpoints:</h5>
+                                        <ul className="list-disc list-inside mb-4 text-sm text-slate-400 space-y-1">
+                                            {integrationExamples[selectedIntegration].endpoints.map(ep => <li key={ep}><code className="font-mono text-sky-500">{ep}</code></li>)}
+                                        </ul>
+                                        <h5 className="font-semibold text-slate-400 mb-2">Example Code Snippet (Conceptual):</h5>
+                                        <div className="code-highlight p-4 rounded-md max-h-80 overflow-auto">
+                                            <pre className="text-sm text-slate-300 whitespace-pre-wrap">{integrationExamples[selectedIntegration].code}</pre>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {activeTab === 'webhooks' && (
+                            <div className="bg-slate-800 p-6 rounded-lg shadow-xl">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xl font-semibold text-sky-300">Webhook Event Simulation</h3>
+                                    <button onClick={toggleWebhookSimulation} className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center ${webhookSimulation ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}>
+                                        <Zap className={`h-5 w-5 mr-2 ${webhookSimulation ? 'pulse-animation' : ''}`} /> {webhookSimulation ? 'Stop Simulation' : 'Start Simulation'}
+                                    </button>
+                                </div>
+                                {webhookSimulation && <p className="text-sm text-green-400 mb-4 pulse-animation">Live webhook simulation active...</p>}
+                                {!webhookSimulation && liveEvents.length === 0 && <p className="text-slate-400">Click "Start Simulation" to see mock webhook events.</p>}
+                                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                                    {liveEvents.map(event => ( <div key={event.id} className="bg-slate-850 p-4 rounded-md border border-slate-700 fade-in"> <div className="flex justify-between items-start mb-2"><div> <p className="font-semibold text-sky-400">{event.event}</p> <p className="text-xs text-slate-500">{formatDate(event.timestamp)} (ID: {event.id})</p></div> <span className={`text-xs px-2 py-1 rounded-full ${ event.event.includes('created') ? 'bg-green-500/20 text-green-400' : event.event.includes('updated') || event.event.includes('modified') ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400' }`}>{event.event.split('.')[1]}</span></div> <div className="code-highlight p-3 rounded-md text-xs"> <HighlightedJson jsonString={JSON.stringify(event.data, null, 2)} /></div></div> ))}
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'security' && (
+                            <div className="bg-slate-800 p-6 rounded-lg shadow-xl space-y-6">
+                                <div><div className="flex items-center mb-2"><Shield className="h-8 w-8 text-green-400 mr-3"/><h3 className="text-xl font-semibold text-sky-300">Security Considerations</h3></div><p className="text-slate-300">OneRoster API security is paramount. This section outlines key security practices.</p></div>
+                                <div className="bg-slate-850 p-4 rounded-md border border-slate-700"><h4 className="text-lg font-semibold text-green-400 mb-2">Authentication & Authorization</h4><p className="text-slate-300 mb-2">OneRoster typically uses OAuth 2.0 (specifically the Client Credentials Grant or Authorization Code Grant) for secure API access. The token you can set in the API Testing tab simulates this.</p><ul className="list-disc list-inside text-slate-400 space-y-1 pl-4"><li>Ensure HTTPS is used for all communications.</li><li>Implement robust token management: secure storage, short-lived tokens, refresh tokens.</li><li>Scope permissions appropriately (e.g., read-only access for certain clients).</li><li>Validate `sourcedId` parameters to prevent unauthorized data access.</li></ul></div>
+                                <div className="bg-slate-850 p-4 rounded-md border border-slate-700"><h4 className="text-lg font-semibold text-green-400 mb-2">Data Privacy & Compliance</h4><p className="text-slate-300 mb-2">Adhere to relevant data privacy regulations like FERPA, GDPR, etc.</p><ul className="list-disc list-inside text-slate-400 space-y-1 pl-4"><li>Minimize data exposure: only provide necessary fields.</li><li>Implement data masking or anonymization for non-production environments.</li><li>Regularly audit access logs and data changes.</li><li>Securely handle PII (Personally Identifiable Information) found in user and demographic data.</li></ul></div>
+                                <div className="bg-slate-850 p-4 rounded-md border border-slate-700"><h4 className="text-lg font-semibold text-green-400 mb-2">Webhook Security</h4><p className="text-slate-300 mb-2">If using webhooks, ensure their security:</p><ul className="list-disc list-inside text-slate-400 space-y-1 pl-4"><li>Verify webhook signatures to ensure requests originate from the trusted source.</li><li>Use HTTPS for webhook endpoints.</li><li>Implement idempotency for webhook event processing to handle retries.</li></ul></div>
+                            </div>
+                        )}
+                        {activeTab === 'settings' && (
+                            <div className="bg-slate-800 p-6 rounded-lg shadow-xl">
+                                <div className="flex items-center mb-4"><Settings className="h-8 w-8 text-slate-400 mr-3"/><h3 className="text-xl font-semibold text-sky-300">Application Settings</h3></div>
+                                <p className="text-slate-400 mb-6">This section is a placeholder for future application settings, such as theme preferences, API base URL configuration, or notification settings.</p>
+                                <div className="space-y-4">
+                                    <div className="bg-slate-850 p-4 rounded-md border border-slate-700"><h4 className="font-semibold text-slate-300">Theme</h4><p className="text-sm text-slate-500">Dark Mode (Default)</p></div>
+                                    <div className="bg-slate-850 p-4 rounded-md border border-slate-700"><h4 className="font-semibold text-slate-300">API Configuration</h4><p className="text-sm text-slate-500">Base URL: {BACKEND_API_URL.split('/api')[0]} (Live Backend)</p></div>
+                                    <div className="bg-slate-850 p-4 rounded-md border border-slate-700"><h4 className="font-semibold text-slate-300">Notification Preferences</h4><p className="text-sm text-slate-500">Email notifications: Disabled</p></div>
+                                </div>
+                            </div>
+                        )}
+                    </div></main>
+                    <footer className="text-center py-8 border-t border-slate-700"><p className="text-sm text-slate-500">© {new Date().getFullYear()} OneRoster v1.1 Enterprise PoC. For demonstration purposes only.</p></footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<OneRosterPOC />, document.getElementById('root'));
+    </script>
+</body>
+</html>
